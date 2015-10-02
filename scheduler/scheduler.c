@@ -75,4 +75,16 @@ TaskInfo thread_create(TaskFunc callback, void *context)
 	return taskinfo;
 }
 
+/* thread_init : 초기화 함수로 main 함수가 처음에 호출하여
+ * global scheduler handeler를 초기화 하고, parent_task를 생성한다
+ */
+void thread_init()
+{
+	gh_sch.root_task = NULL;
+	gh_sch.running_task = NULL;
+
+	gh_sch.child_task = 0;
+	
+	thread_create(parent_task, NULL);
+}
 
