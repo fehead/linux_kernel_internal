@@ -126,3 +126,86 @@ void thread_switch()
 		::"r" (sptmp)
 	   );
 }
+
+// 다음 수행될 task를 선택하는 함수
+void scheduler(void)
+{
+	TaskInfo task;
+	// gh_sch의 running_task가 가르키고 있는 taskinfo 받음
+	task = task_get_runningtask();
+	
+	switch( task->status ) {
+		// task 상태가 TASK_RUN이나 TASK_SLEEP이면 선택됨
+		case TASK_RUN:
+		case TASK_SLEEP:
+			break;
+		// task상태가 TASK_KILL이면 delete하고, swiching함수 다시 호출
+		case TASK_KILL:
+			task_delete(task);
+			scheduler();
+			break;
+		// task상태가 TASK_YIELD이면 상태를 TASK_RUN으로 바꾸고 선택됨
+		case TASK_YIELD:
+			task->status = TASK_RUN;
+			break;
+		// task상태가 TASK_READY이면 상태를 TASK_RUN으로 바꾸고 선택됨
+		case TASK_READY:
+			task->status = TASK_RUN;
+			break;
+	}
+	// gh_sch의 running_task를 linkedlist의 다음 task로 설정
+	task_next();
+}
+
+void thread_wait(void)
+{
+	parent_task(NULL);
+}
+
+// task 상태를 TASK_KILL로 설정 후, thread_yield
+void thread_kill(void)
+{
+	TaskInfo	task;
+	task = task_get_runningtask();
+	task->status = TASK_KILL;
+	thread_switch();
+}
+
+void thread_uninit(void)
+{
+	return;
+}
+
+// child thread가 더이상 없을때까지 thread_switch
+void parent_task(void *context)
+{
+	// signal 처리를 위한 정보를 위한 구조체
+	struct sigaction act;
+	sigset_t masksets;
+	pid_t pid;
+
+	// signal set 초기화
+	sigemptyset( &masksets );
+	// signal handler로 thread_switch() 등록
+	act.sa_handler = thread_switch;
+	act.sa_mask = masksets;
+	act.sa_flags = SA_NODEFER;
+
+	// signal 수신 때 취할 action 설정
+	sigaction( SIGUSR1, &act, NULL );
+
+	if( ( pid = fork() ) == 0 ) {
+		while(1) {
+			sleep(1);
+			kill( getppid(), SIGUSR1 );
+		}
+	} else {
+		while(1) {
+			// child_task가 1개 남았을 때, 즉,parent_task만 남았을때
+			if( gh_sch.child_task == 1 ) {
+				kill( pid, SIGINT );
+				break;
+			}
+		}
+	}
+}
