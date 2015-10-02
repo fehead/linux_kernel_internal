@@ -88,3 +88,41 @@ void thread_init()
 	thread_create(parent_task, NULL);
 }
 
+/*
+ * thread_switch : 수행중이던 task가 다른 대기중인 task에게 cpu사용을 양보하게
+ * 하는 함수로, 현재 cpu레지스터의 값이 수행중이던 task의 stack부분에 차례차례
+ * 저장되게 되며, 다음에 수행될 것으로 선택된 task의 taskinfo의 stack정보가 레지
+ * 스터로 올려진다.
+ */
+static unsigned long spsave, sptmp;
+void thread_switch()
+{
+	asm(	"push %%rax\n \t"
+		"push %%rbx\n \t"
+		"push %%rcx\n \t"
+		"push %%rdx\n \t"
+		"push %%rsi\n \t"
+		"push %%rdi\n \t"
+		"push %%rbp\n \t"
+		"push %%rbp\n \t"
+		"mov  %%rsp, %0"
+		: "=r" (spsave)
+	   );
+
+	gh_sch.running_task->sp = spsave;
+
+	scheduler();
+	sptmp = gh_sch.running_task->sp;
+
+	asm(	"mov %0, %%rsp\n \t"
+		"pop %%rbp\n \t"
+		"pop %%rbp\n \t"
+		"pop %%rdi\n \t"
+		"pop %%rsi\n \t"
+		"pop %%rdx\n \t"
+		"pop %%rcx\n \t"
+		"pop %%rbx\n \t"
+		"pop %%rax\n \t"
+		::"r" (sptmp)
+	   );
+}
