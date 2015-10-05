@@ -5,7 +5,7 @@
 #include <malloc.h>
 #include <memory.h>
 #include <sys/time.h>
-#include "schedule.h"
+#include "scheduler.h"
 
 // task switching시 저장되어야 하는 정보
 struct frame {
@@ -95,7 +95,7 @@ void thread_init()
  * 스터로 올려진다.
  */
 static unsigned long spsave, sptmp;
-void thread_switch()
+void thread_switch(int a)
 {
 	asm(	"push %%rax\n \t"
 		"push %%rbx\n \t"
@@ -168,7 +168,7 @@ void thread_kill(void)
 	TaskInfo	task;
 	task = task_get_runningtask();
 	task->status = TASK_KILL;
-	thread_switch();
+	thread_switch(0);
 }
 
 void thread_uninit(void)
@@ -217,7 +217,7 @@ void task_insert(TaskInfo taskinfo)
 		gh_sch.root_task = taskinfo;
 		gh_sch.running_task = taskinfo;
 	} else {
-		TaskInfo temp;
+		TaskInfo temp = gh_sch.root_task;
 		while( temp->next != NULL )
 			temp = temp->next;
 		temp->next = taskinfo;

@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
-#include "schedule.h"
+#include "scheduler.h"
 
 // 스케줄링 대상이 되는 태스트
 void test_func_one(void *context)

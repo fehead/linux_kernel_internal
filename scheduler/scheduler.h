@@ -31,7 +31,7 @@ TaskInfo thread_create(TaskFunc callback, void *context);
 void thread_init(void);
 void thread_wait(void);
 void thread_uninit(void);
-void thread_switch(void);
+void thread_switch(int);
 void thread_kill(void);
 
 #endif	// SCHEDULER_H
