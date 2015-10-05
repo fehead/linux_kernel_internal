@@ -1,4 +1,4 @@
 all:
-        gcc shell.c -o shell
+	gcc shell.c -o shell
 clean:
-        rm shell
+	rm shell
