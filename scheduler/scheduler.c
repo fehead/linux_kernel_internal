@@ -209,3 +209,61 @@ void parent_task(void *context)
 		}
 	}
 }
+
+// linkedlist에 새로운 taskinfo 삽입
+void task_insert(TaskInfo taskinfo)
+{
+	if( gh_sch.root_task == NULL ){
+		gh_sch.root_task = taskinfo;
+		gh_sch.running_task = taskinfo;
+	} else {
+		TaskInfo temp;
+		while( temp->next != NULL )
+			temp = temp->next;
+		temp->next = taskinfo;
+		taskinfo->prev = temp;
+	}
+}
+
+// linkedlist에 gh_sch.running_task가 가르키고 있는 task 리턴
+TaskInfo task_get_runningtask(void)
+{
+	return gh_sch.running_task;
+}
+
+// linkedlist에서 gh_sch.running_task가 가르키고 있는 task의 다음 task리턴
+void task_next(void)
+{
+	TaskInfo temp;
+	temp = gh_sch.running_task;
+	// gh_sch.running_task가 NULL이 아니면
+	if( temp->next != NULL )
+		gh_sch.running_task = temp->next;
+	// gh_sch.running_task가 NULL이면, parent task를 가르킴
+	else 
+		gh_sch.running_task = gh_sch.root_task;
+}
+
+// linkedlist에서 task를 지움
+void task_delete(TaskInfo taskinfo)
+{
+	TaskInfo temp = taskinfo->prev;
+	if( gh_sch.root_task == taskinfo ) {
+		gh_sch.root_task = NULL;
+		gh_sch.running_task = NULL;
+		gh_sch.child_task = 0;
+	} else {
+		temp->next = taskinfo->next;
+
+		if( taskinfo == gh_sch.running_task ) {
+			if( temp->next != NULL ){
+				(taskinfo->next)->prev = temp;
+				gh_sch.running_task = temp->next;
+			} else {
+				gh_sch.running_task = temp;
+			}
+		}
+		gh_sch.child_task--;
+	}
+	free(taskinfo);
+}
